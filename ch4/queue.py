@@ -1,0 +1,184 @@
+"""
+Implement the Queue ADT, using a list such that the rear of the queue
+is at the end of the list.
+
+Design and implement an experiment to do benchmark comparisons of the
+two queue implementations. What can you learn from such an experiment?
+
+It is possible to implement a queue such that both enqueue and dequeue
+have O(1) performance on average. In this case it means that most of
+the time enqueue and dequeue will be O(1) except in one particular
+circumstance where dequeue will be O(n).
+
+```
+$ python queue.py
+`Queue`: Rear of the queue is at the start of the list.
+enqueue time: 0.263
+enqueue-dequeue time: 0.274
+enqueue-dequeue-alt time: 0.341
+
+`Queue2`: Rear of the queue is at the end of the list.
+enqueue time: 0.013
+enqueue-dequeue time: 0.077
+enqueue-dequeue-alt time: 0.337
+
+`Queue3`: Use 2 stacks.
+enqueue time: 0.023
+enqueue-dequeue time: 0.110
+enqueue-dequeue-alt time: 0.663
+
+`Queue4`: Use 2 stacks with native Python lists.
+enqueue time: 0.014
+enqueue-dequeue time: 0.054
+enqueue-dequeue-alt time: 0.456
+```
+
+`Queue` has O(1) enqueue operation, but O(N) dequeue operation
+because it has to shift the whole list over by 1 step each time
+
+`Queue2` has O
+
+`Queue2` has faster enqueue time because it does List.append O(1)
+while `Queue` has to do List.insert, which is O(n) because it has to
+shift the list over by 1 step and copy all data over.
+
+`Queue` has faster dequeue time because it does List.pop O(1)
+while `Queue2` has to do List.pop(1), which is O(n) with similar reasons.
+"""
+
+# standard lib
+import random
+import timeit
+from copy import deepcopy
+from functools import partial
+
+# first-party lib
+from stack import Stack
+
+
+class Queue:
+	"""
+	Rear of the queue is at the start of the list.
+	"""
+	def __init__(self):
+		self.items = []
+
+	def is_empty(self):
+		return len(self.items) == 0
+
+	def enqueue(self, item):
+		self.items.insert(0, item)
+
+	def dequeue(self):
+		return self.items.pop()
+
+	def size(self):
+		return len(self.items)
+
+
+class Queue2:
+	"""
+	Rear of the queue is at the end of the list.
+	"""
+	def __init__(self):
+		self.items = []
+
+	def is_empty(self):
+		return len(self.items) == 0
+
+	def enqueue(self, item):
+		self.items.append(item)
+
+	def dequeue(self):
+		return self.items.pop(0)
+
+	def size(self):
+		return len(self.items)
+
+
+class Queue3:
+	"""
+	Use 2 stacks.
+	"""
+	def __init__(self):
+		self.in_stack = Stack()
+		self.out_stack = Stack()
+
+	def is_empty(self):		
+		return self.in_stack.is_empty() and self.out_stack.is_empty()
+
+	def enqueue(self, item):
+		self.in_stack.push(item)
+
+	def dequeue(self):
+		if self.out_stack.is_empty():
+			while not self.in_stack.is_empty():
+				self.out_stack.push(self.in_stack.pop())
+		return self.out_stack.pop()
+
+	def size(self):
+		return self.in_stack.size() + self.out_stack.size()
+
+
+class Queue4:
+	"""
+	Use 2 stacks using native Python lists.
+	"""
+	def __init__(self):
+		self.in_stack = []
+		self.out_stack = []
+
+	def is_empty(self):		
+		return len(self.in_stack) == 0 and len(self.out_stack) == 0
+
+	def enqueue(self, item):
+		self.in_stack.append(item)
+
+	def dequeue(self):
+		if len(self.out_stack) == 0:
+			while len(self.in_stack) > 0:
+				self.out_stack.append(self.in_stack.pop())
+		return self.out_stack.pop()
+
+	def size(self):
+		return len(self.in_stack) + len(self.out_stack)
+
+def sim_enqueue(q_cls, n):
+	q = q_cls()
+	for i in range(n):
+		q.enqueue(i)
+
+def sim_enqueue_dequeue(q_cls, n):
+	q = q_cls()
+	for i in range(n):
+		q.enqueue(i)
+	for i in range(n):
+		q.dequeue()
+
+def sim_enqueue_dequeue_alt(q_cls, n):
+	q = q_cls()
+	for j in range(n):
+		for i in range(random.randint(1, 5)):
+			q.enqueue(i)
+		for i in range(random.randint(1, q.size())):
+			q.dequeue()
+
+
+N = 10000
+TIME_N = 10
+
+def time_it(q_cls):
+	t_enq = timeit.Timer(partial(sim_enqueue, q_cls, N))
+	t_deq = timeit.Timer(partial(sim_enqueue_dequeue, q_cls, N))
+	t_deq_alt = timeit.Timer(partial(sim_enqueue_dequeue_alt, q_cls, N))
+	print(f'`{q_cls.__name__}`: {q_cls.__doc__.strip()}')
+	print(f'enqueue time: {t_enq.timeit(TIME_N):.3f}')
+	print(f'enqueue-dequeue time: {t_deq.timeit(TIME_N):.3f}')
+	print(f'enqueue-dequeue-alt time: {t_deq_alt.timeit(TIME_N):.3f}')
+	print()
+
+time_it(Queue)
+time_it(Queue2)
+time_it(Queue3)
+time_it(Queue4)
+
