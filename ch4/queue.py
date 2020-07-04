@@ -1,7 +1,6 @@
 """
 Implement the Queue ADT, using a list such that the rear of the queue
 is at the end of the list.
-
 Design and implement an experiment to do benchmark comparisons of the
 two queue implementations. What can you learn from such an experiment?
 
@@ -13,40 +12,43 @@ circumstance where dequeue will be O(n).
 ```
 $ python queue.py
 `Queue`: Rear of the queue is at the start of the list.
-enqueue time: 0.263
-enqueue-dequeue time: 0.274
-enqueue-dequeue-alt time: 0.341
+enqueue time: 0.258
+enqueue-dequeue time: 0.276
+enqueue-dequeue-alt time: 0.318
 
 `Queue2`: Rear of the queue is at the end of the list.
-enqueue time: 0.013
-enqueue-dequeue time: 0.077
-enqueue-dequeue-alt time: 0.337
+enqueue time: 0.014
+enqueue-dequeue time: 0.081
+enqueue-dequeue-alt time: 0.332
 
 `Queue3`: Use 2 stacks.
-enqueue time: 0.023
-enqueue-dequeue time: 0.110
-enqueue-dequeue-alt time: 0.663
+enqueue time: 0.022
+enqueue-dequeue time: 0.120
+enqueue-dequeue-alt time: 0.676
 
-`Queue4`: Use 2 stacks with native Python lists.
-enqueue time: 0.014
-enqueue-dequeue time: 0.054
-enqueue-dequeue-alt time: 0.456
+`Queue4`: Use 2 stacks using native Python lists.
+enqueue time: 0.013
+enqueue-dequeue time: 0.055
+enqueue-dequeue-alt time: 0.449
+
+`Queue5`: Use collections.deque, which is a doubly linked list.
+enqueue time: 0.013
+enqueue-dequeue time: 0.028
 ```
 
-`Queue` has O(1) enqueue operation, but O(N) dequeue operation
-because it has to shift the whole list over by 1 step each time
+`Queue` has O(1) enqueue, but O(N) dequeue because it has to shift
+the whole list over by 1 step each time.
 
-`Queue2` has O
+`Queue2` has O(N) enqueue, but O(1) dequeue.
 
-`Queue2` has faster enqueue time because it does List.append O(1)
-while `Queue` has to do List.insert, which is O(n) because it has to
-shift the list over by 1 step and copy all data over.
+`Queue3` and `Queue4` has O(1) enqueue. For dequeue, it is O(1) on average,
+but occasionally O(N).
 
-`Queue` has faster dequeue time because it does List.pop O(1)
-while `Queue2` has to do List.pop(1), which is O(n) with similar reasons.
+`Queue5` has O(1) enqueue and O(1) dequeue.
 """
 
 # standard lib
+import collections
 import random
 import timeit
 from copy import deepcopy
@@ -143,10 +145,32 @@ class Queue4:
 	def size(self):
 		return len(self.in_stack) + len(self.out_stack)
 
+
+class Queue5:
+	"""
+	Use collections.deque, which is a doubly linked list.
+	"""
+	def __init__(self):
+		self.deque = collections.deque()
+
+	def is_empty(self):		
+		return len(self.deque) == 0
+
+	def enqueue(self, item):
+		self.deque.append(item)
+
+	def dequeue(self):
+		return self.deque.popleft()
+
+	def size(self):
+		return len(self.deque)
+
+
 def sim_enqueue(q_cls, n):
 	q = q_cls()
 	for i in range(n):
 		q.enqueue(i)
+
 
 def sim_enqueue_dequeue(q_cls, n):
 	q = q_cls()
@@ -181,4 +205,5 @@ time_it(Queue)
 time_it(Queue2)
 time_it(Queue3)
 time_it(Queue4)
+time_it(Queue5)
 
